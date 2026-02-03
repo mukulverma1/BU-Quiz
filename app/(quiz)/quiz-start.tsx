@@ -120,6 +120,22 @@ export default function QuizStart() {
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
+  const handlePrevious = () => {
+    if (currentQuestion > 0) {
+      const newAnswers = [...answers];
+      if (selectedAnswer !== null) {
+        newAnswers[currentQuestion] = selectedAnswer;
+        setAnswers(newAnswers);
+      }
+      setCurrentQuestion(currentQuestion - 1);
+      setSelectedAnswer(
+        newAnswers[currentQuestion - 1] !== -1
+          ? newAnswers[currentQuestion - 1]
+          : null,
+      );
+    }
+  };
+
   const handleNext = () => {
     if (selectedAnswer === null) {
       Alert.alert("Error", "Please select an answer");
@@ -138,8 +154,39 @@ export default function QuizStart() {
           : null,
       );
     } else {
-      handleSubmit(false, newAnswers);
+      showSubmitConfirmation(newAnswers);
     }
+  };
+
+  const showSubmitConfirmation = (finalAnswers: number[]) => {
+    if (shuffledQuestions.length === 0) return;
+    
+    const answeredCount = finalAnswers.filter(a => a !== -1).length;
+    const totalQuestions = shuffledQuestions.length;
+    const unansweredCount = totalQuestions - answeredCount;
+    
+    let message = `You have answered ${answeredCount} out of ${totalQuestions} questions.`;
+    if (unansweredCount > 0) {
+      message += `\n\n${unansweredCount} question(s) are unanswered!`;
+    }
+    message += "\n\nDo you want to submit your quiz or recheck your answers?";
+
+    Alert.alert(
+      "Submit Quiz?",
+      message,
+      [
+        {
+          text: "Recheck",
+          style: "cancel",
+        },
+        {
+          text: "Submit",
+          style: "default",
+          onPress: () => handleSubmit(false, finalAnswers),
+        },
+      ],
+      { cancelable: false }
+    );
   };
 
   const handleSubmit = async (autoSubmit: boolean, finalAnswers?: number[]) => {
@@ -243,17 +290,38 @@ export default function QuizStart() {
           ))}
         </View>
 
-        <TouchableOpacity
-          style={styles.nextButton}
-          onPress={handleNext}
-          disabled={isSubmitting}
-        >
-          <Text style={styles.buttonText}>
-            {currentQuestion === shuffledQuestions.length - 1
-              ? "Submit"
-              : "Next"}
-          </Text>
-        </TouchableOpacity>
+        <View style={styles.navigationButtons}>
+          <TouchableOpacity
+            style={[
+              styles.navButton,
+              styles.previousButton,
+              currentQuestion === 0 && styles.navButtonDisabled,
+            ]}
+            onPress={handlePrevious}
+            disabled={currentQuestion === 0 || isSubmitting}
+          >
+            <Text
+              style={[
+                styles.navButtonText,
+                currentQuestion === 0 && styles.navButtonTextDisabled,
+              ]}
+            >
+              Previous
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.navButton, styles.nextButton]}
+            onPress={handleNext}
+            disabled={isSubmitting}
+          >
+            <Text style={styles.navButtonText}>
+              {currentQuestion === shuffledQuestions.length - 1
+                ? "Submit"
+                : "Next"}
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </View>
   );
@@ -355,15 +423,36 @@ const styles = StyleSheet.create({
     color: "#FFD700",
     fontWeight: "600",
   },
-  nextButton: {
-    backgroundColor: "#FFD700",
+  navigationButtons: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  navButton: {
+    flex: 1,
     padding: 16,
     borderRadius: 8,
     alignItems: "center",
   },
-  buttonText: {
-    fontSize: 18,
+  previousButton: {
+    backgroundColor: "#333",
+    borderWidth: 2,
+    borderColor: "#555",
+  },
+  nextButton: {
+    backgroundColor: "#FFD700",
+  },
+  navButtonDisabled: {
+    backgroundColor: "#222",
+    borderColor: "#333",
+    opacity: 0.5,
+  },
+  navButtonText: {
+    fontSize: 16,
     fontWeight: "600",
     color: "#000",
+  },
+  navButtonTextDisabled: {
+    color: "#666",
   },
 });
