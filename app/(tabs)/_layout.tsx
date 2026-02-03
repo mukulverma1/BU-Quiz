@@ -1,33 +1,74 @@
-import { Tabs } from 'expo-router';
-import React from 'react';
+import { Tabs } from "expo-router";
+import { Text } from "react-native";
+import { useAuth } from "../../context/auth";
 
-import { HapticTab } from '@/components/haptic-tab';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+export default function TabsLayout() {
+  const { user, isLoading } = useAuth();
 
-export default function TabLayout() {
-  const colorScheme = useColorScheme();
+  if (isLoading || !user) return null;
+
+  const isStudent = user.type === "student";
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
         headerShown: false,
-        tabBarButton: HapticTab,
-      }}>
+        tabBarStyle: {
+          backgroundColor: "#111",
+          borderTopColor: "#FFD700",
+          borderTopWidth: 1,
+          height: 60,
+          paddingBottom: 8,
+          paddingTop: 8,
+        },
+        tabBarActiveTintColor: "#FFD700",
+        tabBarInactiveTintColor: "#888",
+        tabBarLabelStyle: {
+          fontSize: 12,
+          fontWeight: "600",
+        },
+      }}
+    >
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Home',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
+          title: isStudent ? "Home" : "Dashboard",
+          tabBarLabel: isStudent ? "Home" : "Dashboard",
+          tabBarIcon: ({ color }) => (
+            <Text style={{ fontSize: 24, color }}>🏠</Text>
+          ),
         }}
       />
+
       <Tabs.Screen
-        name="explore"
+        name="profile"
         options={{
-          title: 'Explore',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
+          title: "Profile",
+          tabBarIcon: ({ color }) => (
+            <Text style={{ fontSize: 24, color }}>👤</Text>
+          ),
+        }}
+      />
+
+      <Tabs.Screen
+        name="quizzes"
+        options={{
+          href: isStudent ? null : "/(tabs)/quizzes",
+          title: "Quizzes",
+          tabBarIcon: ({ color }) => (
+            <Text style={{ fontSize: 24, color }}>📝</Text>
+          ),
+        }}
+      />
+
+      <Tabs.Screen
+        name="results"
+        options={{
+          href: isStudent ? null : "/(tabs)/results",
+          title: "Results",
+          tabBarIcon: ({ color }) => (
+            <Text style={{ fontSize: 24, color }}>📊</Text>
+          ),
         }}
       />
     </Tabs>

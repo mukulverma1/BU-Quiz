@@ -1,98 +1,316 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import { useRouter } from "expo-router";
+import {
+    collection,
+    deleteDoc,
+    doc,
+    getDocs,
+    query,
+    where,
+} from "firebase/firestore";
+import { useEffect, useState } from "react";
+import {
+    Alert,
+    RefreshControl,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
+} from "react-native";
+import { useAuth } from "../../context/auth";
+import { db } from "../../firebase/config";
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+export default function Home() {
+  const { user } = useAuth();
+  const router = useRouter();
+  const [quizCode, setQuizCode] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [quizzes, setQuizzes] = useState<any[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
 
-export default function HomeScreen() {
+  useEffect(() => {
+    if (user?.type === "teacher") {
+      loadQuizzes();
+    }
+  }, [user]);
+
+  const loadQuizzes = async () => {
+    if (!user) return;
+
+    try {
+      const q = query(
+        collection(db, "quizzes"),
+        where("teacherEmail", "==", user.email),
+      );
+      const querySnapshot = await getDocs(q);
+      const quizzesData = querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setQuizzes(quizzesData);
+    } catch (error) {
+      console.error("Error loading quizzes:", error);
+    }
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadQuizzes();
+    setRefreshing(false);
+  };
+
+  const handleJoinQuiz = async () => {
+    const code = quizCode.trim().toUpperCase();
+
+    if (!code) {
+      Alert.alert("Error", "Please enter a quiz code");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const q = query(collection(db, "quizzes"), where("quizCode", "==", code));
+      const querySnapshot = await getDocs(q);
+
+      if (querySnapshot.empty) {
+        Alert.alert("Error", "Invalid quiz code. Please check and try again.");
+        setLoading(false);
+        return;
+      }
+
+      const quizDoc = querySnapshot.docs[0];
+      const quizData = {
+        id: quizDoc.id,
+        ...quizDoc.data(),
+      };
+
+      // Navigate to quiz instructions
+      router.push({
+        pathname: "/(quiz)/quiz-instructions",
+        params: { quizData: JSON.stringify(quizData) },
+      });
+    } catch (error) {
+      console.error("Error joining quiz:", error);
+      Alert.alert("Error", "Failed to join quiz. Please try again.");
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteQuiz = async (quizId: string, quizTitle: string) => {
+    Alert.alert(
+      "Delete Quiz",
+      `Are you sure you want to delete "${quizTitle}"?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await deleteDoc(doc(db, "quizzes", quizId));
+              await loadQuizzes();
+              Alert.alert("Success", "Quiz deleted successfully");
+            } catch (error) {
+              console.error("Error deleting quiz:", error);
+              Alert.alert("Error", "Failed to delete quiz");
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  if (user?.type === "student") {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.title}>Welcome, {user.name}!</Text>
+
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Enter Quiz Code</Text>
+
+          <TextInput
+            style={styles.input}
+            placeholder="Enter 6-character code"
+            placeholderTextColor="#888"
+            value={quizCode}
+            onChangeText={setQuizCode}
+            autoCapitalize="characters"
+            maxLength={6}
+            editable={!loading}
+          />
+
+          <TouchableOpacity
+            style={[styles.button, loading && styles.buttonDisabled]}
+            onPress={handleJoinQuiz}
+            disabled={loading}
+          >
+            <Text style={styles.buttonText}>
+              {loading ? "Validating..." : "Join Quiz"}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
+    <ScrollView
+      style={styles.container}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          tintColor="#FFD700"
         />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+      }
+    >
+      <Text style={styles.title}>Teacher Dashboard</Text>
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+      <TouchableOpacity
+        style={styles.createButton}
+        onPress={() => router.push("/(tabs)/quizzes")}
+      >
+        <Text style={styles.buttonText}>+ Create New Quiz</Text>
+      </TouchableOpacity>
+
+      <View style={styles.quizList}>
+        <Text style={styles.sectionTitle}>My Quizzes</Text>
+
+        {quizzes.length === 0 ? (
+          <Text style={styles.emptyText}>No quizzes created yet</Text>
+        ) : (
+          quizzes.map((quiz) => (
+            <View key={quiz.id} style={styles.quizCard}>
+              <View style={styles.quizInfo}>
+                <Text style={styles.quizTitle}>{quiz.title}</Text>
+                <Text style={styles.quizCode}>Code: {quiz.quizCode}</Text>
+                <Text style={styles.quizTime}>Time: {quiz.time} minutes</Text>
+                <Text style={styles.quizQuestions}>
+                  Questions: {quiz.questions?.length || 0}
+                </Text>
+              </View>
+
+              <TouchableOpacity
+                style={styles.deleteButton}
+                onPress={() => handleDeleteQuiz(quiz.id, quiz.title)}
+              >
+                <Text style={styles.deleteButtonText}>Delete</Text>
+              </TouchableOpacity>
+            </View>
+          ))
+        )}
+      </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  container: {
+    flex: 1,
+    backgroundColor: "#000",
+    padding: 20,
   },
-  stepContainer: {
-    gap: 8,
+  title: {
+    fontSize: 28,
+    fontWeight: "bold",
+    color: "#FFD700",
+    marginBottom: 24,
+    marginTop: 40,
+  },
+  card: {
+    backgroundColor: "#111",
+    borderRadius: 12,
+    padding: 24,
+  },
+  cardTitle: {
+    fontSize: 20,
+    fontWeight: "600",
+    color: "#FFF",
+    marginBottom: 16,
+  },
+  input: {
+    backgroundColor: "#222",
+    color: "#FFF",
+    padding: 16,
+    borderRadius: 8,
+    marginBottom: 16,
+    fontSize: 16,
+  },
+  button: {
+    backgroundColor: "#FFD700",
+    padding: 16,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  buttonDisabled: {
+    opacity: 0.6,
+  },
+  buttonText: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#000",
+  },
+  createButton: {
+    backgroundColor: "#FFD700",
+    padding: 16,
+    borderRadius: 8,
+    alignItems: "center",
+    marginBottom: 24,
+  },
+  quizList: {
+    marginBottom: 40,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: "600",
+    color: "#FFF",
+    marginBottom: 16,
+  },
+  emptyText: {
+    color: "#888",
+    fontSize: 16,
+    textAlign: "center",
+    marginTop: 20,
+  },
+  quizCard: {
+    backgroundColor: "#111",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+  },
+  quizInfo: {
+    marginBottom: 12,
+  },
+  quizTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#FFF",
     marginBottom: 8,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  quizCode: {
+    fontSize: 16,
+    color: "#FFD700",
+    marginBottom: 4,
+  },
+  quizTime: {
+    fontSize: 14,
+    color: "#888",
+    marginBottom: 2,
+  },
+  quizQuestions: {
+    fontSize: 14,
+    color: "#888",
+  },
+  deleteButton: {
+    backgroundColor: "#ff4444",
+    padding: 12,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  deleteButtonText: {
+    color: "#FFF",
+    fontWeight: "600",
   },
 });
