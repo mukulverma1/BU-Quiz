@@ -2,7 +2,6 @@ import { useRouter } from "expo-router";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { useState } from "react";
 import {
-    Alert,
     StyleSheet,
     Text,
     TextInput,
@@ -11,6 +10,7 @@ import {
 } from "react-native";
 import { useAuth } from "../../context/auth";
 import { db } from "../../firebase/config";
+import { showAlert } from "../../utils/alert";
 
 export default function TeacherLogin() {
   const router = useRouter();
@@ -21,7 +21,7 @@ export default function TeacherLogin() {
 
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert("Error", "Please fill in all fields");
+      showAlert("Error", "Please fill in all fields");
       return;
     }
 
@@ -36,7 +36,7 @@ export default function TeacherLogin() {
       const querySnapshot = await getDocs(q);
 
       if (querySnapshot.empty) {
-        Alert.alert("Error", "Invalid email or password");
+        showAlert("Error", "Invalid email or password");
         setLoading(false);
         return;
       }
@@ -54,7 +54,7 @@ export default function TeacherLogin() {
       });
     } catch (error) {
       console.error("Login error:", error);
-      Alert.alert("Error", "Failed to login. Please try again.");
+      showAlert("Error", "Failed to login. Please try again.");
       setLoading(false);
     }
   };

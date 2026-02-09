@@ -2,7 +2,6 @@ import { useRouter } from "expo-router";
 import { addDoc, collection, getDocs, query, where } from "firebase/firestore";
 import { useState } from "react";
 import {
-    Alert,
     ScrollView,
     StyleSheet,
     Text,
@@ -11,6 +10,7 @@ import {
     View,
 } from "react-native";
 import { db } from "../../firebase/config";
+import { showAlert } from "../../utils/alert";
 
 export default function TeacherSignup() {
   const router = useRouter();
@@ -23,7 +23,7 @@ export default function TeacherSignup() {
 
   const handleSignup = async () => {
     if (!name || !email || !password || !department || !phone) {
-      Alert.alert("Error", "Please fill in all fields");
+      showAlert("Error", "Please fill in all fields");
       return;
     }
 
@@ -38,7 +38,7 @@ export default function TeacherSignup() {
       const querySnapshot = await getDocs(q);
 
       if (!querySnapshot.empty) {
-        Alert.alert("Error", "Email already registered");
+        showAlert("Error", "Email already registered");
         setLoading(false);
         return;
       }
@@ -52,12 +52,12 @@ export default function TeacherSignup() {
         createdAt: new Date(),
       });
 
-      Alert.alert("Success", "Account created successfully!", [
+      showAlert("Success", "Account created successfully!", [
         { text: "OK", onPress: () => router.replace("/(auth)/teacher-login") },
       ]);
     } catch (error) {
       console.error("Signup error:", error);
-      Alert.alert("Error", "Failed to create account. Please try again.");
+      showAlert("Error", "Failed to create account. Please try again.");
       setLoading(false);
     }
   };

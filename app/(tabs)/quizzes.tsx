@@ -2,7 +2,6 @@ import { useRouter } from "expo-router";
 import { addDoc, collection } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import {
-    Alert,
     ScrollView,
     StyleSheet,
     Text,
@@ -12,6 +11,7 @@ import {
 } from "react-native";
 import { useAuth } from "../../context/auth";
 import { db } from "../../firebase/config";
+import { showAlert } from "../../utils/alert";
 
 interface Question {
   question: string;
@@ -58,7 +58,7 @@ export default function CreateQuiz() {
 
   const removeQuestion = (index: number) => {
     if (questions.length === 1) {
-      Alert.alert("Error", "Quiz must have at least one question");
+      showAlert("Error", "Quiz must have at least one question");
       return;
     }
     setQuestions(questions.filter((_, i) => i !== index));
@@ -82,25 +82,25 @@ export default function CreateQuiz() {
 
   const validateQuiz = () => {
     if (!title.trim()) {
-      Alert.alert("Error", "Please enter quiz title");
+      showAlert("Error", "Please enter quiz title");
       return false;
     }
 
     const timeNum = parseInt(time);
     if (!time || isNaN(timeNum) || timeNum <= 0) {
-      Alert.alert("Error", "Please enter valid time in minutes");
+      showAlert("Error", "Please enter valid time in minutes");
       return false;
     }
 
     for (let i = 0; i < questions.length; i++) {
       const q = questions[i];
       if (!q.question.trim()) {
-        Alert.alert("Error", `Question ${i + 1} is empty`);
+        showAlert("Error", `Question ${i + 1} is empty`);
         return false;
       }
       for (let j = 0; j < 4; j++) {
         if (!q.options[j].trim()) {
-          Alert.alert("Error", `Question ${i + 1}, Option ${j + 1} is empty`);
+          showAlert("Error", `Question ${i + 1}, Option ${j + 1} is empty`);
           return false;
         }
       }
@@ -125,7 +125,7 @@ export default function CreateQuiz() {
         createdAt: new Date(),
       });
 
-      Alert.alert("Success", `Quiz created with code: ${quizCode}`, [
+      showAlert("Success", `Quiz created with code: ${quizCode}`, [
         {
           text: "OK",
           onPress: () => {
@@ -136,7 +136,7 @@ export default function CreateQuiz() {
       ]);
     } catch (error) {
       console.error("Error creating quiz:", error);
-      Alert.alert("Error", "Failed to create quiz");
+      showAlert("Error", "Failed to create quiz");
       setLoading(false);
     }
   };

@@ -2,7 +2,6 @@ import { useRouter } from "expo-router";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { useState } from "react";
 import {
-    Alert,
     ScrollView,
     StyleSheet,
     Text,
@@ -11,6 +10,7 @@ import {
     View,
 } from "react-native";
 import { db } from "../../firebase/config";
+import { showAlert } from "../../utils/alert";
 
 export default function ForgotPassword() {
   const router = useRouter();
@@ -21,7 +21,7 @@ export default function ForgotPassword() {
 
   const handleSearch = async () => {
     if (!email || !phone) {
-      Alert.alert("Error", "Please enter both email and phone number");
+      showAlert("Error", "Please enter both email and phone number");
       return;
     }
 
@@ -54,7 +54,7 @@ export default function ForgotPassword() {
           setLoading(false);
           return;
         } else {
-          Alert.alert("Error", "Phone number does not match with this email");
+          showAlert("Error", "Phone number does not match with this email");
           setLoading(false);
           return;
         }
@@ -81,18 +81,18 @@ export default function ForgotPassword() {
           setLoading(false);
           return;
         } else {
-          Alert.alert("Error", "Phone number does not match with this email");
+          showAlert("Error", "Phone number does not match with this email");
           setLoading(false);
           return;
         }
       }
 
       // User not found
-      Alert.alert("Error", "No account found with this email address");
+      showAlert("Error", "No account found with this email address");
       setLoading(false);
     } catch (error) {
       console.error("Error searching user:", error);
-      Alert.alert("Error", "Failed to search. Please try again.");
+      showAlert("Error", "Failed to search. Please try again.");
       setLoading(false);
     }
   };

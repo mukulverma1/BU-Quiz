@@ -2,7 +2,7 @@ import { useRouter } from "expo-router";
 import { doc, updateDoc } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import {
-  Alert,
+  Modal,
   ScrollView,
   StyleSheet,
   Text,
@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { useAuth } from "../../context/auth";
 import { db } from "../../firebase/config";
+import { showAlert } from "../../utils/alert";
 
 export default function Profile() {
   const { user, logout, updateUser } = useAuth();
@@ -20,6 +21,7 @@ export default function Profile() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
+  const [logoutModalVisible, setLogoutModalVisible] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -30,7 +32,7 @@ export default function Profile() {
 
   const handleSave = async () => {
     if (!name.trim()) {
-      Alert.alert("Error", "Name cannot be empty");
+      showAlert("Error", "Name cannot be empty");
       return;
     }
 
@@ -45,10 +47,10 @@ export default function Profile() {
       await updateUser({ name: name.trim(), phone: phone.trim() });
 
       setEditing(false);
-      Alert.alert("Success", "Profile updated successfully");
+      showAlert("Success", "Profile updated successfully");
     } catch (error) {
       console.error("Error updating profile:", error);
-      Alert.alert("Error", "Failed to update profile");
+      showAlert("Error", "Failed to update profile");
     } finally {
       setLoading(false);
     }
@@ -63,16 +65,17 @@ export default function Profile() {
   };
 
   const handleLogout = () => {
-    Alert.alert("Logout", "Are you sure you want to logout?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Logout",
-        style: "destructive",
-        onPress: async () => {
-          await logout();
-        },
-      },
-    ]);
+    setLogoutModalVisible(true);
+  };
+
+  const confirmLogout = async () => {
+    setLogoutModalVisible(false);
+    // Navigate first before logout to avoid component unmounting
+    router.replace("/");
+    // Small delay to ensure navigation starts before user state changes
+    setTimeout(async () => {
+      await logout();
+    }, 100);
   };
 
   if (!user) return null;
@@ -176,6 +179,34 @@ export default function Profile() {
       <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
         <Text style={styles.logoutButtonText}>Logout</Text>
       </TouchableOpacity>
+
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={logoutModalVisible}
+        onRequestClose={() => setLogoutModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Logout</Text>
+            <Text style={styles.modalMessage}>Are you sure you want to logout?</Text>
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalButtonCancel]}
+                onPress={() => setLogoutModalVisible(false)}
+              >
+                <Text style={styles.modalButtonCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.modalButtonConfirm]}
+                onPress={confirmLogout}
+              >
+                <Text style={styles.modalButtonConfirmText}>Logout</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
@@ -268,5 +299,56 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     color: "#FFF",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  modalContent: {
+    backgroundColor: "#111",
+    borderRadius: 12,
+    padding: 24,
+    width: "100%",
+    maxWidth: 320,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#FFF",
+    marginBottom: 12,
+  },
+  modalMessage: {
+    fontSize: 16,
+    color: "#888",
+    marginBottom: 24,
+  },
+  modalButtons: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  modalButton: {
+    flex: 1,
+    padding: 14,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  modalButtonCancel: {
+    backgroundColor: "#333",
+  },
+  modalButtonCancelText: {
+    color: "#FFF",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  modalButtonConfirm: {
+    backgroundColor: "#ff4444",
+  },
+  modalButtonConfirmText: {
+    color: "#FFF",
+    fontSize: 16,
+    fontWeight: "600",
   },
 });

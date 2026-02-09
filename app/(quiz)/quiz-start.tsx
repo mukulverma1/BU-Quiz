@@ -2,7 +2,6 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { addDoc, collection } from "firebase/firestore";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  Alert,
   AppState,
   StyleSheet,
   Text,
@@ -11,6 +10,7 @@ import {
 } from "react-native";
 import { useAuth } from "../../context/auth";
 import { db } from "../../firebase/config";
+import { showAlert } from "../../utils/alert";
 
 export default function QuizStart() {
   const router = useRouter();
@@ -73,7 +73,7 @@ export default function QuizStart() {
         !hasSubmitted.current &&
         !isSubmitting
       ) {
-        Alert.alert(
+        showAlert(
           "Quiz Auto-Submitted",
           "You left the quiz. It has been automatically submitted.",
           [{ text: "OK" }],
@@ -93,7 +93,7 @@ export default function QuizStart() {
     const handleVisibilityChange = () => {
       // Only trigger if anti-cheat is enabled and page is actually hidden
       if (isAntiCheatEnabled.current && document.hidden && !hasSubmitted.current && !isSubmitting) {
-        Alert.alert(
+        showAlert(
           "Quiz Auto-Submitted",
           "You switched tabs. Quiz has been automatically submitted.",
           [{ text: "OK" }],
@@ -138,7 +138,7 @@ export default function QuizStart() {
 
   const handleNext = () => {
     if (selectedAnswer === null) {
-      Alert.alert("Error", "Please select an answer");
+      showAlert("Error", "Please select an answer");
       return;
     }
 
@@ -171,7 +171,7 @@ export default function QuizStart() {
     }
     message += "\n\nDo you want to submit your quiz or recheck your answers?";
 
-    Alert.alert(
+    showAlert(
       "Submit Quiz?",
       message,
       [
@@ -224,7 +224,7 @@ export default function QuizStart() {
       });
     } catch (error) {
       console.error("Error submitting quiz:", error);
-      Alert.alert("Error", "Failed to submit quiz");
+      showAlert("Error", "Failed to submit quiz");
       setIsSubmitting(false);
       hasSubmitted.current = false;
     }

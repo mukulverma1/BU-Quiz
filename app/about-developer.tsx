@@ -34,8 +34,8 @@ export default function AboutDeveloper() {
       <View style={styles.card}>
         <Text style={styles.sectionTitle}>About This App</Text>
         <Text style={styles.description}>
-          This Quiz & Attendance Management App is designed to simplify
-          educational assessments and attendance tracking. Built with modern
+          This Quiz Management App is designed to simplify
+          educational assessments. Built with modern
           technologies to provide a seamless experience for both teachers and
           students.
         </Text>

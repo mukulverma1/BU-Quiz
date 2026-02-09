@@ -3,7 +3,6 @@ import * as Sharing from "expo-sharing";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import {
-    Alert,
     Platform,
     ScrollView,
     StyleSheet,
@@ -14,6 +13,7 @@ import {
 import * as XLSX from "xlsx";
 import { useAuth } from "../../context/auth";
 import { db } from "../../firebase/config";
+import { showAlert } from "../../utils/alert";
 
 export default function TeacherResults() {
   const { user } = useAuth();
@@ -58,7 +58,7 @@ export default function TeacherResults() {
       setSelectedQuiz(quizCode);
     } catch (error) {
       console.error("Error loading results:", error);
-      Alert.alert("Error", "Failed to load results");
+      showAlert("Error", "Failed to load results");
     } finally {
       setLoading(false);
     }
@@ -66,7 +66,7 @@ export default function TeacherResults() {
 
   const downloadExcel = async () => {
     if (results.length === 0) {
-      Alert.alert("Error", "No results to download");
+      showAlert("Error", "No results to download");
       return;
     }
 
@@ -89,7 +89,7 @@ export default function TeacherResults() {
       if (Platform.OS === "web") {
         // For web: direct browser download
         XLSX.writeFile(wb, filename);
-        Alert.alert("Success", "Excel file downloaded to your computer");
+        showAlert("Success", "Excel file downloaded to your computer");
       } else {
         // For mobile: Save to cache and share
         const wbout = XLSX.write(wb, { type: "base64", bookType: "xlsx" });
@@ -108,7 +108,7 @@ export default function TeacherResults() {
       }
     } catch (error) {
       console.error("Error downloading Excel:", error);
-      Alert.alert("Error", "Failed to download Excel file");
+      showAlert("Error", "Failed to download Excel file");
     }
   };
 

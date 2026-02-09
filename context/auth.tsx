@@ -45,12 +45,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!navigationState?.key || isLoading) return;
 
-    const inAuthGroup = segments[0] === "(tabs)";
+    const inTabsGroup = segments[0] === "(tabs)";
     const inQuizGroup = segments[0] === "(quiz)";
-    const isAuthenticatedRoute = inAuthGroup || inQuizGroup;
+    const isAuthenticatedRoute = inTabsGroup || inQuizGroup;
 
     if (!user && isAuthenticatedRoute) {
-      router.replace("/(auth)/student-login");
+      router.replace("/");
     } else if (user && !isAuthenticatedRoute && segments[0] !== "(auth)") {
       router.replace("/(tabs)");
     }
@@ -83,7 +83,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       await AsyncStorage.removeItem("user");
       setUser(null);
-      // Navigation is handled by the useEffect guard above
     } catch (error) {
       console.error("Error during logout:", error);
     }

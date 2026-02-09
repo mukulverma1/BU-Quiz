@@ -9,7 +9,6 @@ import {
 } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import {
-    Alert,
     RefreshControl,
     ScrollView,
     StyleSheet,
@@ -20,6 +19,7 @@ import {
 } from "react-native";
 import { useAuth } from "../../context/auth";
 import { db } from "../../firebase/config";
+import { showAlert } from "../../utils/alert";
 
 export default function Home() {
   const { user } = useAuth();
@@ -64,7 +64,7 @@ export default function Home() {
     const code = quizCode.trim().toUpperCase();
 
     if (!code) {
-      Alert.alert("Error", "Please enter a quiz code");
+      showAlert("Error", "Please enter a quiz code");
       return;
     }
 
@@ -75,7 +75,7 @@ export default function Home() {
       const querySnapshot = await getDocs(q);
 
       if (querySnapshot.empty) {
-        Alert.alert("Error", "Invalid quiz code. Please check and try again.");
+        showAlert("Error", "Invalid quiz code. Please check and try again.");
         setLoading(false);
         return;
       }
@@ -93,13 +93,13 @@ export default function Home() {
       });
     } catch (error) {
       console.error("Error joining quiz:", error);
-      Alert.alert("Error", "Failed to join quiz. Please try again.");
+      showAlert("Error", "Failed to join quiz. Please try again.");
       setLoading(false);
     }
   };
 
   const handleDeleteQuiz = async (quizId: string, quizTitle: string) => {
-    Alert.alert(
+    showAlert(
       "Delete Quiz",
       `Are you sure you want to delete "${quizTitle}"?`,
       [
@@ -111,10 +111,10 @@ export default function Home() {
             try {
               await deleteDoc(doc(db, "quizzes", quizId));
               await loadQuizzes();
-              Alert.alert("Success", "Quiz deleted successfully");
+              showAlert("Success", "Quiz deleted successfully");
             } catch (error) {
               console.error("Error deleting quiz:", error);
-              Alert.alert("Error", "Failed to delete quiz");
+              showAlert("Error", "Failed to delete quiz");
             }
           },
         },
